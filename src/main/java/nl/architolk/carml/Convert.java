@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.text.Normalizer.Form;
 import org.eclipse.rdf4j.model.Model;
 import com.taxonic.carml.vocab.Rdf;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
 //import com.taxonic.carml.logical_source_resolver.CsvResolver;
@@ -25,11 +26,14 @@ public class Convert {
 
   public static void main(String[] args) {
 
-    if (args.length == 3) {
+    if ((args.length == 3) || (args.length == 4)) {
 
       LOG.info("Starting conversion");
       LOG.info("Mapper file: {}",args[0]);
       LOG.info("Data directory: {}",args[1]);
+      if (args.length==4) {
+        LOG.info("Data file: {}", args[3]);
+      }
       LOG.info("Output file: {}",args[2]);
 
       try {
@@ -62,14 +66,18 @@ public class Convert {
 
             .build();
 
+        if (args.length==4) {
+          FileInputStream inputStream = new FileInputStream(args[3]);
+          mapper.bindInputStream(inputStream);
+        }
         Model result = mapper.map(mapping);
 
-        FileOutputStream out = new FileOutputStream(args[2]);
+        FileOutputStream outputStream = new FileOutputStream(args[2]);
         try {
-          Rio.write(result, out, RDFFormat.TURTLE);
+          Rio.write(result, outputStream, RDFFormat.TURTLE);
         }
         finally {
-          out.close();
+          outputStream.close();
         }
         LOG.info("Done!");
       }
@@ -77,7 +85,7 @@ public class Convert {
         LOG.error(e.getMessage(),e);
       }
     } else {
-      LOG.info("Usage: carml <mapper.rml.ttl> <input directory> <output.ttl");
+      LOG.info("Usage: carml <mapper.rml.ttl> <input directory> <output.ttl> {<input file>}");
     }
   }
 }
