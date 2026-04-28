@@ -4,27 +4,32 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
-import com.taxonic.carml.model.TriplesMap;
-import com.taxonic.carml.util.RmlMappingLoader;
+import io.carml.model.TriplesMap;
+import io.carml.util.RmlMappingLoader;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.Rio;
-import com.taxonic.carml.engine.RmlMapper;
+import io.carml.engine.rdf.RdfRmlMapper;
 import java.nio.file.Paths;
 import java.text.Normalizer.Form;
 import org.eclipse.rdf4j.model.Model;
-import com.taxonic.carml.vocab.Rdf;
+import io.carml.vocab.Rdf;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 //import com.taxonic.carml.logical_source_resolver.CsvResolver;
-import com.taxonic.carml.logical_source_resolver.JsonPathResolver;
+import io.carml.logicalsourceresolver.JsonPathResolver;
 //import com.taxonic.carml.logical_source_resolver.XPathResolver;
 
+@SpringBootApplication
 public class Convert {
 
   private static final Logger LOG = LoggerFactory.getLogger(Convert.class);
 
   public static void main(String[] args) {
+
+    SpringApplication.run(Convert.class, args);
 
     if ((args.length == 3) || (args.length == 4)) {
 
@@ -43,11 +48,12 @@ public class Convert {
             .build()
             .load(RDFFormat.TURTLE, Paths.get(args[0]));
 
-        RmlMapper mapper =
-          RmlMapper
-            .newBuilder()
+        RdfRmlMapper mapper =
+          RdfRmlMapper
+            .builder()
+            .triplesMaps(mapping)
             // Add the resolvers to suit your need
-            .setLogicalSourceResolver(Rdf.Ql.JsonPath, new JsonPathResolver())
+            .setLogicalSourceResolver(Rdf.Ql.JsonPath, JsonPathResolver::getInstance)
             //.setLogicalSourceResolver(Rdf.Ql.XPath, new XPathResolver())
             //.setLogicalSourceResolver(Rdf.Ql.Csv, new CsvResolver())
 
@@ -66,11 +72,13 @@ public class Convert {
 
             .build();
 
+        /*
         if (args.length==4) {
           FileInputStream inputStream = new FileInputStream(args[3]);
           mapper.bindInputStream(inputStream);
         }
-        Model result = mapper.map(mapping);
+        */
+        Model result = mapper.mapToModel();
 
         FileOutputStream outputStream = new FileOutputStream(args[2]);
         try {
